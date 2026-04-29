@@ -1,17 +1,27 @@
 "use client";
 
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LoginPage() {
   const { signIn } = useSignIn();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    if (user.publicMetadata?.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
+  }, [isLoaded, user]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +39,6 @@ export default function LoginPage() {
         identifier: username,
         password,
       });
-      router.push("/");
     } catch (err: any) {
       const message = err?.errors?.[0]?.longMessage ?? "Something went wrong.";
       setError(message);
