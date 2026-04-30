@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher, clerkClient } from "@clerk/nextjs/server";
 
 const isPublic = createRouteMatcher([
   "/",
@@ -11,17 +11,20 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   if (req.nextUrl.pathname.startsWith("/admin")) {
-    const { sessionClaims } = await auth();
-    console.log("sessionClaims:", JSON.stringify(sessionClaims, null, 2));
-    
-    const role = (sessionClaims?.publicMetadata as any)?.role;
-    console.log("role:", role);
+    const { userId } = await auth();
+
+    if (!userId) return new Response("Forbidden", { status: 403 });
+    // get user role
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const role = user.publicMetadata?.role;
 
     if (role !== "admin") {
       return new Response("Forbidden", { status: 403 });
     }
   }
 });
+
 export const config = {
   matcher: ["/((?!_next|.*\\..*).*)"],
 };

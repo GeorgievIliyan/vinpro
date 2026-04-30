@@ -1,11 +1,12 @@
 "use client";
 
-import { useSignIn, useUser } from "@clerk/nextjs";
+import { useSignIn, useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export default function LoginPage() {
   const { signIn } = useSignIn();
+  const { setActive } = useClerk();
   const { user, isLoaded } = useUser();
   const router = useRouter();
 
@@ -35,10 +36,13 @@ export default function LoginPage() {
     }
 
     try {
-      await signIn.create({
-        identifier: username,
-        password,
-      });
+      await signIn.create({ identifier: username, password });
+
+      if (signIn.status === "complete") {
+        await setActive({ session: signIn.createdSessionId });
+      } else {
+        setError("Additional verification required.");
+      }
     } catch (err: any) {
       const message = err?.errors?.[0]?.longMessage ?? "Something went wrong.";
       setError(message);
