@@ -1,5 +1,12 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, Db } from "mongodb";
 
 const client = new MongoClient(process.env.MONGODB_URI!);
+let dbInstance: Db;
 
-export const db = client.db("app");
+export async function getDb(): Promise<Db> {
+  if (!dbInstance) {
+    await client.connect();
+    dbInstance = client.db("vinpro");
+  }
+  return dbInstance;
+}

@@ -1,17 +1,14 @@
 import { clerkClient } from "@clerk/nextjs/server";
-import { db } from "@/lib/mongodb";
 import { nanoid } from "nanoid";
-
-function generatePassword(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
+import { getDb } from "@/lib/mongodb";
 
 export async function POST() {
+  const db = await getDb();
   try {
     const client = await clerkClient();
 
-    const username = nanoid();
-    const password = generatePassword();
+    const username = nanoid(8);
+    const password = nanoid(8);
 
     // create user in db
     const user = await client.users.createUser({
@@ -31,7 +28,7 @@ export async function POST() {
     } catch (dbError) {
       // rollback clerk user
       await client.users.deleteUser(user.id);
-
+      console.error(dbError)
       return Response.json(
         { error: "Failed to store user in database" },
         { status: 500 }
