@@ -1,8 +1,20 @@
 import { auth } from '@clerk/nextjs/server'
 import { getDb } from '@/lib/mongodb'
+import { headers } from 'next/headers'
+import { isDev } from '@/lib/utils'
+import { NextResponse } from 'next/server'
 
 
 export async function POST(req: Request) {
+  const token = req.headers.get('x-api-token')
+
+  if (!isDev && (!token || token == "")) {
+    return NextResponse.json(
+      { error: "Not authorized." },
+      { status: 401 }
+    )
+  }
+
   try {
     const { userId } = await auth()
 
@@ -56,10 +68,22 @@ export async function POST(req: Request) {
       vinDecoder: vinData.vinDecoder || ""
     }
 
-    await db.collection('accounts').updateOne(
-      { clerkId: userId },
-      { $inc: { remaining_checks: -1 } }
+    const updatedAccount = await db.collection('accounts').findOneAndUpdate(
+      {
+        clerkId: userId,
+        remaining_checks: { $gt: 0 }
+      },
+      {
+        $inc: { remaining_checks: -1 }
+      },
+      {
+        returnDocument: 'after'
+      }
     )
+
+    if (!updatedAccount || !updatedAccount.value) {
+      return Response.json({ error: "No checks left" }, { status: 403 })
+    }
 
     await db.collection('checks').insertOne(
       {

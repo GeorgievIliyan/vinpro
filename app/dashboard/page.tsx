@@ -1,23 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import LogoutButton from '../components/LogoutButton'
 
 const DashboardPage = () => {
   const { user, isLoaded, isSignedIn } = useUser()
+
   const [vin, setVin] = useState<string>('')
   const [vehicleData, setVehicleData] = useState<any>(null)
+  const [checks, setChecks] = useState<any[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [loadingChecks, setLoadingChecks] = useState<boolean>(false)
 
-  // fetch car info
+  // зареждам проверени коли
+  useEffect(() => {
+    if (!user?.id) return
+
+    const saved = localStorage.getItem(`checks_${user.id}`)
+
+    if (saved) {
+      setChecks(JSON.parse(saved))
+    } else {
+      fetchChecks()
+    }
+  }, [user?.id])
+
+  // вадя данни за колата
   const checkInfo = async () => {
     setLoading(true)
     try {
       const response = await fetch('/api/fetch-info', {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ vin }),
       })
@@ -25,21 +41,20 @@ const DashboardPage = () => {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || "Something went wrong")
+        alert(data.error || 'Something went wrong')
         setVehicleData(null)
       } else {
         setVehicleData(data)
       }
-
     } catch (err) {
-      console.error('An error has occurred: ', err)
-      alert("Failed to fetch vehicle information. You have not been charged a check token. ")
+      console.error(err)
+      alert('Failed to fetch vehicle information.')
     } finally {
       setLoading(false)
     }
   }
 
-  // save as pdf
+  // експорт pdf
   const downloadPDF = async () => {
     if (!vehicleData) return
 
@@ -73,113 +88,163 @@ const DashboardPage = () => {
       alert('Download failed')
     }
   }
+  // взимам предишни проверки
+  const fetchChecks = async () => {
+    if (!user?.id) return
+
+    setLoadingChecks(true)
+
+    try {
+      const response = await fetch(`/api/fetch-checks?userId=${user.id}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setChecks(data)
+        localStorage.setItem('checks', JSON.stringify(data))
+      } else {
+        alert('Failed to load previous checks')
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingChecks(false)
+    }
+  }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Dashboard</h1>
+    <div className="p-6">
+      <h1 className="text-xl font-bold">Dashboard</h1>
 
-      <LogoutButton />
+      <div className="mt-4">
+        <LogoutButton />
+      </div>
 
-      <div style={{ marginTop: "20px", marginBottom: "20px" }}>
+      {/* поле vin */}
+      <div className="mt-6 flex gap-2">
         <input
           value={vin}
           onChange={(e) => setVin(e.target.value.trim())}
           placeholder="Enter VIN"
-          style={{ padding: "8px", width: "300px", marginRight: "10px" }}
+          className="border px-3 py-2 w-80"
         />
 
         <button
           onClick={checkInfo}
           disabled={!isLoaded || !isSignedIn || loading}
-          style={{ padding: "8px 16px" }}
+          className="border px-4 py-2"
         >
-          {loading ? "Checking..." : "Check Info"}
+          {loading ? 'Checking...' : 'Check Info'}
+        </button>
+
+        <button
+          onClick={fetchChecks}
+          disabled={!isLoaded || !isSignedIn || loadingChecks}
+          className="border px-4 py-2"
+        >
+          {loadingChecks ? 'Loading...' : 'Previous Checks'}
         </button>
       </div>
 
+      {/* данни за колата */}
       {vehicleData && (
-        <div style={{
-          marginTop: "20px",
-          padding: "20px",
-          border: "1px solid #ccc",
-          borderRadius: "8px",
-          backgroundColor: "#f9f9f9"
-        }}>
-          <h2>Vehicle Information</h2>
+        <div className="mt-6 p-4 border">
+          <h2 className="font-semibold">Vehicle Information</h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "10px", marginTop: "15px" }}>
-            <strong>VIN:</strong>
-            <span>{vehicleData.vin}</span>
-
-            <strong>Brand:</strong>
-            <span>{vehicleData.brand || "N/A"}</span>
-
-            <strong>Model:</strong>
-            <span>{vehicleData.model || "N/A"}</span>
-
-            <strong>Year:</strong>
-            <span>{vehicleData.year || "N/A"}</span>
-
-            <strong>Mileage:</strong>
-            <span>{vehicleData.mileage || "N/A"}</span>
-
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <strong>VIN:</strong> <span>{vehicleData.vin}</span>
+            <strong>Brand:</strong> <span>{vehicleData.brand || 'N/A'}</span>
+            <strong>Model:</strong> <span>{vehicleData.model || 'N/A'}</span>
+            <strong>Year:</strong> <span>{vehicleData.year || 'N/A'}</span>
+            <strong>Mileage:</strong> <span>{vehicleData.mileage || 'N/A'}</span>
             <strong>Price:</strong>
-            <span>{vehicleData.price ? `${vehicleData.price} ${vehicleData.currency}` : "N/A"}</span>
-
-            <strong>Registration Country:</strong>
-            <span>{vehicleData.registrationCountry || "N/A"}</span>
-
-            <strong>Fuel Type:</strong>
-            <span>{vehicleData.fuelType || "N/A"}</span>
-
-            <strong>Color:</strong>
-            <span>{vehicleData.color || "N/A"}</span>
-
-            <strong>Body Type:</strong>
-            <span>{vehicleData.bodyType || "N/A"}</span>
-
-            <strong>Version:</strong>
-            <span>{vehicleData.version || "N/A"}</span>
+            <span>
+              {vehicleData.price
+                ? `${vehicleData.price} ${vehicleData.currency}`
+                : 'N/A'}
+            </span>
+            <strong>Country:</strong>
+            <span>{vehicleData.registrationCountry || 'N/A'}</span>
+            <strong>Fuel:</strong> <span>{vehicleData.fuelType || 'N/A'}</span>
+            <strong>Color:</strong> <span>{vehicleData.color || 'N/A'}</span>
+            <strong>Body:</strong> <span>{vehicleData.bodyType || 'N/A'}</span>
+            <strong>Version:</strong> <span>{vehicleData.version || 'N/A'}</span>
           </div>
 
-          <button onClick={() => downloadPDF()}>
-            Download as pdf
-          </button>
+          <div className="mt-4">
+            <button onClick={downloadPDF} className="border px-4 py-2">
+              Download PDF
+            </button>
+          </div>
 
-          <div style={{ marginTop: "20px" }}>
-            <strong>Vehicle History:</strong>
+          <div className="mt-4">
+            <strong>Vehicle History:</strong>{' '}
             {vehicleData.vehicleHistory ? (
-              <a href={vehicleData.vehicleHistory} target="_blank" rel="noopener noreferrer" style={{ marginLeft: "10px" }}>
-                View History
+              <a href={vehicleData.vehicleHistory} className="underline">
+                View
               </a>
             ) : (
-              <span style={{ marginLeft: "10px" }}>N/A</span>
+              'N/A'
             )}
           </div>
 
-          <div style={{ marginTop: "10px" }}>
-            <strong>Stolen Check:</strong>
+          <div className="mt-2">
+            <strong>Stolen Check:</strong>{' '}
             {vehicleData.stolenCheck ? (
-              <a href={vehicleData.stolenCheck} target="_blank" rel="noopener noreferrer" style={{ marginLeft: "10px" }}>
-                Check Report
+              <a href={vehicleData.stolenCheck} className="underline">
+                View
               </a>
             ) : (
-              <span style={{ marginLeft: "10px" }}>N/A</span>
+              'N/A'
             )}
           </div>
 
-          <div style={{ marginTop: "10px" }}>
-            <strong>VIN Decoder:</strong>
+          <div className="mt-2">
+            <strong>VIN Decoder:</strong>{' '}
             {vehicleData.vinDecoder ? (
-              <a href={vehicleData.vinDecoder} target="_blank" rel="noopener noreferrer" style={{ marginLeft: "10px" }}>
-                Decode Full Info
+              <a href={vehicleData.vinDecoder} className="underline">
+                View
               </a>
             ) : (
-              <span style={{ marginLeft: "10px" }}>N/A</span>
+              'N/A'
             )}
           </div>
         </div>
       )}
+
+      <div className="border p-3">
+        <div>VIN: WAUZZZF44HA007970</div>
+        <div>Brand: Audi</div>
+        <div>Model: A4</div>
+        <div>Year: 2016</div>
+        <div>Mileage: 150000-200000</div>
+        <div>Price: 33900.00 BGN</div>
+        <div>Registration Country: N/A</div>
+        <div>Fuel Type: diesel</div>
+        <div>Color: N/A</div>
+        <div>Body Type: Wagon</div>
+        <div>Version: N/A</div>
+
+        <div>
+          Vehicle History:{" "}
+          <a className="underline" href="https://www.automoli.com/en/page/partnerid=80001322/vin=WAUZZZF44HA007970/" target="_blank">
+            link
+          </a>
+        </div>
+
+        <div>
+          Stolen Check:{" "}
+          <a className="underline" href="http://www.stolencars.eu/vin/WAUZZZF44HA007970" target="_blank">
+            link
+          </a>
+        </div>
+
+        <div>
+          VIN Decoder:{" "}
+          <a className="underline" href="https://vindecoder.pl/en/decode/WAUZZZF44HA007970" target="_blank">
+            link
+          </a>
+        </div>
+      </div>
     </div>
   )
 }

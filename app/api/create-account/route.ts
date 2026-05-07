@@ -1,8 +1,19 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { nanoid } from "nanoid";
 import { getDb } from "@/lib/mongodb";
+import { isDev } from "@/lib/utils";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const token = req.headers.get('x-api-token')
+
+  if (!isDev && (!token || token == "")) {
+    return NextResponse.json(
+      { error: "Not authorized." },
+      { status: 401 }
+    )
+  }
+
   const db = await getDb();
   try {
     const client = await clerkClient();
