@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   doc.registerFont("Regular", fontRegular);
   doc.registerFont("Bold", fontBold);
 
-  // header part
+  // header
   doc.font("Bold").fontSize(20).text("Car Report", { align: "center" });
   doc.moveDown(1.5);
 
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   doc.moveDown();
 
-  // extra links
+  // links
   addLine("Vehicle History", data.vehicleHistory);
   addLine("Stolen Check", data.stolenCheck);
   addLine("VIN Decoder", data.vinDecoder);

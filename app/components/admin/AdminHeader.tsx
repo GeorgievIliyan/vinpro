@@ -1,6 +1,5 @@
 "use client"
 
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -15,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { RefreshCw, LogOut, User, Settings, Menu } from "lucide-react"
 import { SignOutButton } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
 
 interface AdminHeaderProps {
   onRefresh?: () => void
@@ -23,6 +23,10 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ onRefresh, totalAccounts, onMenuToggle }: AdminHeaderProps) {
+  // user data
+  const { user } = useUser();
+  const username = String(user?.username);
+
   return (
     <header className="h-14 border-b border-border bg-background/95 backdrop-blur-sm flex items-center px-6 gap-4 shrink-0">
       {onMenuToggle && (
@@ -69,29 +73,18 @@ export function AdminHeader({ onRefresh, totalAccounts, onMenuToggle }: AdminHea
             <Button variant="ghost" className="size-8 rounded-full p-0 hover:ring-2 hover:ring-border">
               <Avatar className="size-7">
                 <AvatarFallback className="text-[10px] font-semibold bg-primary text-primary-foreground">
-                  AD
+                  {username[0]}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Admin User</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem className="text-sm gap-2">
-                <User className="size-3.5" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-sm gap-2">
-                <Settings className="size-3.5" />
-                Settings
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">{username}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <SignOutButton>
               <DropdownMenuItem className="text-sm gap-2 text-destructive focus:text-destructive">
                 <LogOut className="size-3.5" />
-                Sign out
+                Logout
               </DropdownMenuItem>
             </SignOutButton>
           </DropdownMenuContent>

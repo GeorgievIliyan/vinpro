@@ -14,7 +14,7 @@ export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
 
     if (!userId) return new Response("Forbidden", { status: 403 });
-    // get user role
+    // get role
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
     const role = user.publicMetadata?.role;

@@ -34,8 +34,13 @@ export async function POST(req: Request) {
       return Response.json({ error: "Account not found" }, { status: 404 })
     }
 
-    if (account.remaining_checks <= 0) {
-      return Response.json({ error: "No checks left" }, { status: 403 })
+    const remainingChecks = Number(account.remaining_checks || 0)
+
+    if (remainingChecks <= 0) {
+      return Response.json(
+        { error: "No checks left" },
+        { status: 403 }
+      )
     }
 
     const vinResponse = await fetch(`https://db.vin/api/v1/vin/${vin}`)
@@ -71,18 +76,21 @@ export async function POST(req: Request) {
     const updatedAccount = await db.collection('accounts').findOneAndUpdate(
       {
         clerkId: userId,
-        remaining_checks: { $gt: 0 }
+        remaining_checks: { $gt: 0 },
       },
       {
-        $inc: { remaining_checks: -1 }
+        $inc: { remaining_checks: -1 },
       },
       {
-        returnDocument: 'after'
+        returnDocument: 'after',
       }
     )
 
-    if (!updatedAccount || !updatedAccount.value) {
-      return Response.json({ error: "No checks left" }, { status: 403 })
+    if (!updatedAccount) {
+      return Response.json(
+        { error: 'No checks left' },
+        { status: 403 }
+      )
     }
 
     await db.collection('checks').insertOne(

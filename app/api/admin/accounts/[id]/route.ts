@@ -5,7 +5,7 @@ import { isDev } from '@/lib/utils'
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const token = req.headers.get('x-api-token')
 
@@ -16,9 +16,10 @@ export async function DELETE(
     )
   }
   const db = await getDb()
+  const { id } = await params
 
   await db.collection('accounts').deleteOne({
-    _id: new ObjectId(params.id),
+    _id: new ObjectId(id),
   })
 
   return NextResponse.json({ success: true })

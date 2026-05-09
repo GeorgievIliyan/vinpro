@@ -21,14 +21,14 @@ export async function POST(req: NextRequest) {
     const username = nanoid(8);
     const password = nanoid(8);
 
-    // create user in db
+    // create user
     const user = await client.users.createUser({
       username,
       password,
     });
 
     try {
-      // save acc to db
+      // save to db
       await db.collection("accounts").insertOne({
         clerkId: user.id,
         username,
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         checks_remaining: 1,
       });
     } catch (dbError) {
-      // rollback clerk user
+      // rollback
       await client.users.deleteUser(user.id);
       console.error(dbError)
       return Response.json(

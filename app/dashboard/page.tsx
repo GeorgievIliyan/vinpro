@@ -2,64 +2,108 @@
 
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
-import LogoutButton from '../components/LogoutButton'
 
-const DashboardPage = () => {
-  const { user, isLoaded, isSignedIn } = useUser()
+import { Sidebar } from '../components/dashboard/SideBar'
+import { VinLookup } from '../components/dashboard/VinLookup'
+import { StatCards } from '../components/dashboard/StatCards'
+import { VehicleCard } from '../components/dashboard/VehicleCard'
+import { ChecksHistory } from '../components/dashboard/ChecksHistory'
 
-  const [vin, setVin] = useState<string>('')
-  const [vehicleData, setVehicleData] = useState<any>(null)
-  const [checks, setChecks] = useState<any[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const [loadingChecks, setLoadingChecks] = useState<boolean>(false)
+// vehicle data type
+interface VehicleData {
+  [key: string]: any;
+  vin: string
+  brand?: string
+  model?: string
+  year?: string | number
+  mileage?: string
+  price?: string
+  currency?: string
+  registrationCountry?: string
+  fuelType?: string
+  color?: string
+  bodyType?: string
+  version?: string
+  vehicleHistory?: string
+  stolenCheck?: string
+  vinDecoder?: string
+}
 
-  // зареждам проверени коли
+export default function DashboardPage() {
+  // clerk user
+  const { user } = useUser()
+
+  // current user id
+  const userId = user?.id
+
+  // vin input
+  const [vin, setVin] = useState('')
+
+  // vehicle result
+  const [vehicleData, setVehicleData] = useState<VehicleData | null>(null)
+
+  // vin lookup loading
+  const [loading, setLoading] = useState(false)
+
+  // previous checks
+  const [checks, setChecks] = useState<VehicleData[]>([])
+
+  // previous checks loading
+  const [loadingChecks, setLoadingChecks] = useState(false)
+
+  // load checks when available
   useEffect(() => {
-    if (!user?.id) return
+    if (!userId) return
 
-    const saved = localStorage.getItem(`checks_${user.id}`)
+    fetchChecks()
+  }, [userId])
 
-    if (saved) {
-      setChecks(JSON.parse(saved))
-    } else {
-      fetchChecks()
-    }
-  }, [user?.id])
-
-  // вадя данни за колата
+  // fetch vehicle info
   const checkInfo = async () => {
+    if (!vin.trim() || !userId) return
+
     setLoading(true)
+
+    // clear result
+    setVehicleData(null)
+
     try {
       const response = await fetch('/api/fetch-info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ vin }),
+        body: JSON.stringify({
+          vin,
+          userId,
+        }),
       })
 
       const data = await response.json()
 
+      // error if failed
       if (!response.ok) {
-        alert(data.error || 'Something went wrong')
-        setVehicleData(null)
-      } else {
-        setVehicleData(data)
+        throw new Error(data?.error || 'Failed to fetch vehicle info')
       }
-    } catch (err) {
-      console.error(err)
-      alert('Failed to fetch vehicle information.')
+
+      // save data
+      setVehicleData(data)
+
+      // refresh history
+      fetchChecks()
+    } catch (error) {
+      console.error('[dashboard] VIN lookup failed:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  // експорт pdf
+  // download pdf
   const downloadPDF = async () => {
     if (!vehicleData) return
 
     try {
-      const res = await fetch('/api/generate-pdf', {
+      const response = await fetch('/api/generate-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,186 +111,110 @@ const DashboardPage = () => {
         body: JSON.stringify(vehicleData),
       })
 
-      if (!res.ok) {
-        alert('Failed to generate PDF')
-        return
+      // error if failed
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF')
       }
 
-      const blob = await res.blob()
+      // convert to blob
+      const blob = await response.blob()
+
+      // temp url
       const url = window.URL.createObjectURL(blob)
 
+      // temp anchor
       const a = document.createElement('a')
+
       a.href = url
       a.download = `car-${vehicleData.vin}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
 
+      document.body.appendChild(a)
+
+      // trigger
+      a.click()
+
+      // cleanup
+      a.remove()
       window.URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error(err)
-      alert('Download failed')
+    } catch (error) {
+      console.error('[dashboard] PDF download failed:', error)
     }
   }
-  // взимам предишни проверки
+
+  // fetch previous checks
   const fetchChecks = async () => {
-    if (!user?.id) return
+    if (!userId) return
 
     setLoadingChecks(true)
 
     try {
-      const response = await fetch(`/api/fetch-checks?userId=${user.id}`)
+      const response = await fetch(
+        `/api/fetch-checks?userId=${userId}`
+      )
+
       const data = await response.json()
 
-      if (response.ok) {
-        setChecks(data)
-        localStorage.setItem('checks', JSON.stringify(data))
-      } else {
-        alert('Failed to load previous checks')
+      // error if failed
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to fetch checks')
       }
-    } catch (err) {
-      console.error(err)
+
+      // save checks
+      setChecks(data)
+    } catch (error) {
+      console.error('[dashboard] Failed to fetch checks:', error)
     } finally {
       setLoadingChecks(false)
     }
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Dashboard</h1>
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* sidebar */}
+      <Sidebar />
 
-      <div className="mt-4">
-        <LogoutButton />
-      </div>
-
-      {/* поле vin */}
-      <div className="mt-6 flex gap-2">
-        <input
-          value={vin}
-          onChange={(e) => setVin(e.target.value.trim())}
-          placeholder="Enter VIN"
-          className="border px-3 py-2 w-80"
-        />
-
-        <button
-          onClick={checkInfo}
-          disabled={!isLoaded || !isSignedIn || loading}
-          className="border px-4 py-2"
-        >
-          {loading ? 'Checking...' : 'Check Info'}
-        </button>
-
-        <button
-          onClick={fetchChecks}
-          disabled={!isLoaded || !isSignedIn || loadingChecks}
-          className="border px-4 py-2"
-        >
-          {loadingChecks ? 'Loading...' : 'Previous Checks'}
-        </button>
-      </div>
-
-      {/* данни за колата */}
-      {vehicleData && (
-        <div className="mt-6 p-4 border">
-          <h2 className="font-semibold">Vehicle Information</h2>
-
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            <strong>VIN:</strong> <span>{vehicleData.vin}</span>
-            <strong>Brand:</strong> <span>{vehicleData.brand || 'N/A'}</span>
-            <strong>Model:</strong> <span>{vehicleData.model || 'N/A'}</span>
-            <strong>Year:</strong> <span>{vehicleData.year || 'N/A'}</span>
-            <strong>Mileage:</strong> <span>{vehicleData.mileage || 'N/A'}</span>
-            <strong>Price:</strong>
-            <span>
-              {vehicleData.price
-                ? `${vehicleData.price} ${vehicleData.currency}`
-                : 'N/A'}
-            </span>
-            <strong>Country:</strong>
-            <span>{vehicleData.registrationCountry || 'N/A'}</span>
-            <strong>Fuel:</strong> <span>{vehicleData.fuelType || 'N/A'}</span>
-            <strong>Color:</strong> <span>{vehicleData.color || 'N/A'}</span>
-            <strong>Body:</strong> <span>{vehicleData.bodyType || 'N/A'}</span>
-            <strong>Version:</strong> <span>{vehicleData.version || 'N/A'}</span>
+      {/* main content */}
+      <main className="flex-1 overflow-y-auto">
+        {/* header */}
+        <header className="sticky top-0 z-10 flex h-14 items-center border-b border-border bg-background/80 px-6 backdrop-blur-sm">
+          <div>
+            <h1 className="text-sm font-semibold text-foreground">
+              Dashboard
+            </h1>
           </div>
+        </header>
 
-          <div className="mt-4">
-            <button onClick={downloadPDF} className="border px-4 py-2">
-              Download PDF
-            </button>
-          </div>
+        {/* dashboard content */}
+        <div className="mx-auto max-w-5xl space-y-6 p-6">
+          {/* statistics cards */}
+          <StatCards />
 
-          <div className="mt-4">
-            <strong>Vehicle History:</strong>{' '}
-            {vehicleData.vehicleHistory ? (
-              <a href={vehicleData.vehicleHistory} className="underline">
-                View
-              </a>
-            ) : (
-              'N/A'
-            )}
-          </div>
+          {/* VIN lookup section */}
+          <VinLookup
+            vin={vin}
+            onVinChange={setVin}
+            onSearch={checkInfo}
+            loading={loading}
+            disabled={loading}
+          />
 
-          <div className="mt-2">
-            <strong>Stolen Check:</strong>{' '}
-            {vehicleData.stolenCheck ? (
-              <a href={vehicleData.stolenCheck} className="underline">
-                View
-              </a>
-            ) : (
-              'N/A'
-            )}
-          </div>
+          {/* vehicle result card */}
+          {vehicleData && (
+            <VehicleCard
+              data={vehicleData}
+              onDownloadPDF={downloadPDF}
+            />
+          )}
 
-          <div className="mt-2">
-            <strong>VIN Decoder:</strong>{' '}
-            {vehicleData.vinDecoder ? (
-              <a href={vehicleData.vinDecoder} className="underline">
-                View
-              </a>
-            ) : (
-              'N/A'
-            )}
-          </div>
+          {/* previous checks history */}
+          <ChecksHistory
+            checks={checks}
+            loading={loadingChecks}
+            onRefresh={fetchChecks}
+            disabled={loadingChecks}
+          />
         </div>
-      )}
-
-      <div className="border p-3">
-        <div>VIN: WAUZZZF44HA007970</div>
-        <div>Brand: Audi</div>
-        <div>Model: A4</div>
-        <div>Year: 2016</div>
-        <div>Mileage: 150000-200000</div>
-        <div>Price: 33900.00 BGN</div>
-        <div>Registration Country: N/A</div>
-        <div>Fuel Type: diesel</div>
-        <div>Color: N/A</div>
-        <div>Body Type: Wagon</div>
-        <div>Version: N/A</div>
-
-        <div>
-          Vehicle History:{" "}
-          <a className="underline" href="https://www.automoli.com/en/page/partnerid=80001322/vin=WAUZZZF44HA007970/" target="_blank">
-            link
-          </a>
-        </div>
-
-        <div>
-          Stolen Check:{" "}
-          <a className="underline" href="http://www.stolencars.eu/vin/WAUZZZF44HA007970" target="_blank">
-            link
-          </a>
-        </div>
-
-        <div>
-          VIN Decoder:{" "}
-          <a className="underline" href="https://vindecoder.pl/en/decode/WAUZZZF44HA007970" target="_blank">
-            link
-          </a>
-        </div>
-      </div>
+      </main>
     </div>
   )
 }
-
-export default DashboardPage

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard,
   Car,
   LogOut,
   ChevronLeft,
@@ -16,25 +15,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { SignOutButton } from '@clerk/nextjs'
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", active: false },
-  { icon: Car, label: 'VIN Lookup', active: false },
+  { icon: Car, label: 'VIN Lookup', active: true },
 ]
 
 interface SidebarProps {
   onLogout?: () => void
 }
 
-export function AdminSidebar({ onLogout }: SidebarProps) {
+export function Sidebar({ onLogout }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'relative flex flex-col border-r border-border bg-AdminSidebar transition-all duration-300 ease-in-out',
+          'relative flex flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out',
           collapsed ? 'w-16' : 'w-60'
         )}
       >
@@ -55,7 +52,7 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
           )}
         </div>
 
-        {/* nav */}
+        {/* Nav */}
         <nav className="flex-1 space-y-0.5 p-2 pt-4">
           {navItems.map((item) => {
             const Icon = item.icon
@@ -103,18 +100,17 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
               <TooltipContent side="right">Logout</TooltipContent>
             </Tooltip>
           ) : (
-            <SignOutButton>
-              <button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              >
-                <LogOut className="h-[18px] w-[18px] shrink-0" />
-                <span>Logout</span>
-              </button>
-            </SignOutButton>
+            <button
+              onClick={onLogout}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-[18px] w-[18px] shrink-0" />
+              <span>Logout</span>
+            </button>
           )}
         </div>
 
-        {/* collapse toggle */}
+        {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed((c) => !c)}
           className="absolute -right-3 top-6 z-999 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-sidebar shadow-sm hover:bg-muted transition-colors"
