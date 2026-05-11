@@ -1,17 +1,10 @@
 import { getDb } from "@/lib/mongodb";
 import { NextRequest, NextResponse } from "next/server";
-import { isDev } from "@/lib/utils";
+import { validateApiToken } from "@/lib/apiAuth";
 
 export async function GET(req: NextRequest) {
-
-  const token = req.headers.get('x-api-token')
-
-  if (!isDev && (!token || token == "")) {
-    return NextResponse.json(
-      { error: "Not authorized." },
-      { status: 401 }
-    )
-  }
+  const authError = validateApiToken(req)
+  if (authError) return authError
 
   const userId = req.nextUrl.searchParams.get("userId");
 

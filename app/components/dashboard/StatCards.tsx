@@ -1,37 +1,50 @@
-import { Search, History, ShieldCheck, FileText } from 'lucide-react'
+'use client'
 
-// TODO: remove mockup data
-const stats = [
-  {
-    label: 'Total Lookups',
-    value: '—',
-    icon: Search,
-    description: 'VINs checked',
-  },
-  {
-    label: 'Saved Reports',
-    value: '—',
-    icon: FileText,
-    description: 'PDFs downloaded',
-  },
-  {
-    label: 'Checks Today',
-    value: '—',
-    icon: History,
-    description: 'Since midnight',
-  },
-  {
-    label: 'Stolen Alerts',
-    value: '0',
-    icon: ShieldCheck,
-    description: 'Vehicles flagged',
-  },
-]
+import { useState, useEffect } from 'react'
+import { Search, History, ShieldCheck, FileText } from 'lucide-react'
+import { getStats, type VinStats } from '@/lib/stats'
 
 export function StatCards() {
+  const [stats, setStats] = useState<VinStats | null>(null)
+
+  const load = () => setStats(getStats())
+
+  useEffect(() => {
+    load()
+    window.addEventListener('vin-stats-updated', load)
+    return () => window.removeEventListener('vin-stats-updated', load)
+  }, [])
+
+  const cards = [
+    {
+      label: 'Total Lookups',
+      value: stats ? String(stats.totalLookups) : '—',
+      icon: Search,
+      description: 'VINs checked',
+    },
+    {
+      label: 'Saved Reports',
+      value: stats ? String(stats.savedReports) : '—',
+      icon: FileText,
+      description: 'PDFs downloaded',
+    },
+    {
+      label: 'Checks Today',
+      value: stats ? String(stats.checksToday) : '—',
+      icon: History,
+      description: 'Since midnight',
+    },
+    {
+      label: 'Stolen Alerts',
+      value: stats ? String(stats.stolenAlerts) : '0',
+      icon: ShieldCheck,
+      description: 'Vehicles flagged',
+    },
+  ]
+
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {stats.map((s) => {
+      {cards.map((s) => {
         const Icon = s.icon
         return (
           <div

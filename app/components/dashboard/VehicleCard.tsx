@@ -122,8 +122,14 @@ export function VehicleCard({ data, onDownloadPDF, pdfLoading }: VehicleCardProp
           icon={Tag}
           label="Price"
           value={
-            data.price
-              ? `${data.price} ${data.currency ?? ''}`.trim()
+            data.price != null
+              ? data.currency === "BGN"
+                ? typeof data.price === 'number'
+                  ? `${(data.price * 0.51).toFixed(2)} EUR`
+                  : Number.isFinite(Number(data.price))
+                  ? `${(Number(data.price) * 0.51).toFixed(2)} EUR`
+                  : `${data.price} ${data.currency ?? ""}`.trim()
+                : `${data.price} ${data.currency ?? ""}`.trim()
               : undefined
           }
         />

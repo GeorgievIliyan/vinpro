@@ -1,4 +1,9 @@
-import { clerkMiddleware, createRouteMatcher, clerkClient } from "@clerk/nextjs/server";
+import {
+  clerkMiddleware,
+  createRouteMatcher,
+  clerkClient,
+} from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isPublic = createRouteMatcher([
   "/",
@@ -6,15 +11,23 @@ const isPublic = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const { pathname } = req.nextUrl;
+  // redirect to login page
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   if (!isPublic(req)) {
     await auth.protect();
   }
 
-  if (req.nextUrl.pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin")) {
     const { userId } = await auth();
 
-    if (!userId) return new Response("Forbidden", { status: 403 });
-    // get role
+    if (!userId) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
     const role = user.publicMetadata?.role;
@@ -23,6 +36,8 @@ export default clerkMiddleware(async (auth, req) => {
       return new Response("Forbidden", { status: 403 });
     }
   }
+
+  return NextResponse.next();
 });
 
 export const config = {

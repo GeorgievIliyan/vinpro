@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
-  Car,
+  ShieldCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Car
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { SignOutButton } from '@clerk/nextjs'
 
 const navItems = [
   { icon: Car, label: 'VIN Lookup', active: true },
@@ -43,7 +45,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
           )}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Car className="h-4 w-4 text-primary-foreground" />
+            <ShieldCheck className="h-4 w-4 text-primary-foreground" />
           </div>
           {!collapsed && (
             <span className="text-sm font-semibold tracking-tight text-foreground">
@@ -100,13 +102,15 @@ export function Sidebar({ onLogout }: SidebarProps) {
               <TooltipContent side="right">Logout</TooltipContent>
             </Tooltip>
           ) : (
-            <button
-              onClick={onLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-[18px] w-[18px] shrink-0" />
-              <span>Logout</span>
-            </button>
+            <SignOutButton>
+              <button
+                onClick={onLogout}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut className="h-[18px] w-[18px] shrink-0" />
+                <span>Logout</span>
+              </button>
+            </SignOutButton>
           )}
         </div>
 

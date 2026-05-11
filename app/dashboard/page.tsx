@@ -8,6 +8,7 @@ import { VinLookup } from '../components/dashboard/VinLookup'
 import { StatCards } from '../components/dashboard/StatCards'
 import { VehicleCard } from '../components/dashboard/VehicleCard'
 import { ChecksHistory } from '../components/dashboard/ChecksHistory'
+import { incrementLookup, incrementSavedReports } from '@/lib/stats'
 
 // vehicle data type
 interface VehicleData {
@@ -89,6 +90,14 @@ export default function DashboardPage() {
       // save data
       setVehicleData(data)
 
+      // Determine if the vehicle was flagged as stolen
+      const isStolen =
+        typeof data?.stolenCheck === 'string' &&
+        data.stolenCheck.toLowerCase().includes('stolen')
+
+      // Increment stats in localStorage
+      incrementLookup(isStolen)
+
       // refresh history
       fetchChecks()
     } catch (error) {
@@ -136,6 +145,9 @@ export default function DashboardPage() {
       // cleanup
       a.remove()
       window.URL.revokeObjectURL(url)
+
+      // Increment saved reports stat
+      incrementSavedReports()
     } catch (error) {
       console.error('[dashboard] PDF download failed:', error)
     }

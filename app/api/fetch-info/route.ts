@@ -1,19 +1,12 @@
 import { auth } from '@clerk/nextjs/server'
 import { getDb } from '@/lib/mongodb'
-import { headers } from 'next/headers'
-import { isDev } from '@/lib/utils'
+import { validateApiToken } from '@/lib/apiAuth'
 import { NextResponse } from 'next/server'
 
 
 export async function POST(req: Request) {
-  const token = req.headers.get('x-api-token')
-
-  if (!isDev && (!token || token == "")) {
-    return NextResponse.json(
-      { error: "Not authorized." },
-      { status: 401 }
-    )
-  }
+  const authError = validateApiToken(req)
+  if (authError) return authError
 
   try {
     const { userId } = await auth()
@@ -23,6 +16,10 @@ export async function POST(req: Request) {
     }
 
     const { vin } = await req.json()
+
+    if (!vin) {
+      return Response.json({ error: "Missing VIN in request body" }, { status: 400 })
+    }
 
     const db = await getDb()
 
@@ -52,7 +49,7 @@ export async function POST(req: Request) {
     const vinData = await vinResponse.json()
 
     if (!vinData || Object.keys(vinData).length === 0 || vinData.error) {
-      return Response.json({ error: "Vehicle not found. You didn't use a check token." }, { status: 404 })
+      return Response.json({ error: "Vehicle not found or VIN lookup failed." }, { status: 404 })
     }
 
     const result = {

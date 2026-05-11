@@ -1,20 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
-import { isDev } from '@/lib/utils'
+import { validateApiToken } from '@/lib/apiAuth'
 
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = req.headers.get('x-api-token')
-
-  if (!isDev && (!token || token == "")) {
-    return NextResponse.json(
-      { error: "Not authorized." },
-      { status: 401 }
-    )
-  }
+  const authError = validateApiToken(req)
+  if (authError) return authError
   const db = await getDb()
   const { id } = await params
 

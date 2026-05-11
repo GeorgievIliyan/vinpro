@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
-  Car,
+  ShieldCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Car
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -46,7 +47,7 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
           )}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Car className="h-4 w-4 text-primary-foreground" />
+            <ShieldCheck className="h-4 w-4 text-primary-foreground" />
           </div>
           {!collapsed && (
             <span className="text-sm font-semibold tracking-tight text-foreground">

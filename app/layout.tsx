@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vinpro",
-  description: "check car vin",
+  title: "VinPro",
+  description: "Instant vehicle history, decoded in seconds.",
 };
 
 export default function RootLayout({
