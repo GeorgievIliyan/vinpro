@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vinpro
 
-## Getting Started
+A modern Next.js app for vehicle lookup and admin dashboards.
 
-First, run the development server:
+## 🚀 Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Vinpro provides a Next.js-based frontend and API layer for VIN lookup, vehicle details, admin management, and dashboard insights.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧰 Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- VIN lookup and vehicle information display
+- Admin pages and account management
+- Dashboard with stats and history
+- Download vehicle data as .pdf
+## 💻 Getting Started
+1. Clone the reposiotry:
+    ```bash
+    git clone https://github.com/GeorgievIliyan/vinpro
+    ```
+2. Enter the folder
+    ```bash
+    cd vinpro
+    ```
+3. Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    ```bash
+    npm install
+    ```
+4. Configure environment variable:
+    Rename the file at the root of the directory from `.env.example` to `.env.local` and place your keys.
 
-## Learn More
+5. Run the development server:
 
-To learn more about Next.js, take a look at the following resources:
+    ```bash
+    npm run dev
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+6. Open the app:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    ```text
+    http://localhost:3000
+    ```
 
-## Deploy on Vercel
+## 📁 Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `app/` — App Router pages and API route handlers
+- `app/components/` — application-specific UI pieces
+- `components/` — shared UI primitives
+- `lib/` — utilities, database helpers, and auth logic
+- `public/` — static assets and fonts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Available Scripts
+
+- `npm run dev` — start the development server
+- `npm run build` — build the production app
+- `npm run start` — run the production build
+
+## 📌 Notes
+
+- Uses Next.js App Router in `app/`
+- API routes are grouped under `app/api/`
