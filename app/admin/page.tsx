@@ -122,7 +122,7 @@ export default function AdminPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <AdminSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
+      <AdminSidebar isOpen={sidebarOpen} onOpenChange={setSidebarOpen} />
 
       {/* основен блок */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">

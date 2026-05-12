@@ -26,6 +26,8 @@ const navItems = [
 
 interface SidebarProps {
   onLogout?: () => void
+  isOpen: boolean
+  onOpenChange: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export function AdminSidebar({ onLogout }: SidebarProps) {
