@@ -43,7 +43,7 @@ export function AdminHeader({ onRefresh, totalAccounts, onMenuToggle }: AdminHea
 
       {/* контекст */}
       <div className="flex items-center gap-2 mr-2">
-        <h1 className="text-sm font-semibold text-foreground">Dashboard</h1>
+        <h1 className="text-sm font-semibold text-foreground">Admin Dashboard</h1>
       </div>
 
       <div className="flex-1" />

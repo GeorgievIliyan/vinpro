@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   ShieldCheck,
@@ -19,21 +20,24 @@ import {
 import { SignOutButton } from '@clerk/nextjs'
 
 const navItems = [
-  { icon: Car, label: 'VIN Lookup', active: true },
+  { icon: Car, label: 'VIN Lookup', href: '/dashboard' },
 ]
 
 interface SidebarProps {
+  collapsed: boolean
+  onCollapsedChange: (val: boolean) => void
   onLogout?: () => void
 }
 
-export function Sidebar({ onLogout }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false)
+export function Sidebar({ collapsed, onCollapsedChange, onLogout }: SidebarProps) {
+  const pathname = usePathname()
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'relative flex flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 h-screen z-50 flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out',
+          'hidden md:flex',
           collapsed ? 'w-16' : 'w-60'
         )}
       >
@@ -58,12 +62,15 @@ export function Sidebar({ onLogout }: SidebarProps) {
         <nav className="flex-1 space-y-0.5 p-2 pt-4">
           {navItems.map((item) => {
             const Icon = item.icon
-            const btn = (
-              <button
+            const isActive = pathname === item.href
+
+            const link = (
+              <Link
                 key={item.label}
+                href={item.href}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  item.active
+                  isActive
                     ? 'bg-accent text-accent-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   collapsed && 'justify-center px-0'
@@ -71,16 +78,16 @@ export function Sidebar({ onLogout }: SidebarProps) {
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
-              </button>
+              </Link>
             )
 
             return collapsed ? (
               <Tooltip key={item.label}>
-                <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                <TooltipTrigger asChild>{link}</TooltipTrigger>
                 <TooltipContent side="right">{item.label}</TooltipContent>
               </Tooltip>
             ) : (
-              btn
+              link
             )
           })}
         </nav>
@@ -116,7 +123,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
 
         {/* Collapse toggle */}
         <button
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => onCollapsedChange(!collapsed)}
           className="absolute -right-3 top-6 z-999 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-sidebar shadow-sm hover:bg-muted transition-colors"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -127,6 +134,38 @@ export function Sidebar({ onLogout }: SidebarProps) {
           )}
         </button>
       </aside>
+
+      {/* ── Mobile bottom nav (visible on mobile only) ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t border-border bg-sidebar">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={cn(
+                'flex flex-1 flex-col items-center justify-center gap-1 py-3 text-xs font-medium transition-colors',
+                isActive
+                  ? 'text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
+        <SignOutButton>
+          <button
+            onClick={onLogout}
+            className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Logout</span>
+          </button>
+        </SignOutButton>
+      </nav>
     </TooltipProvider>
   )
 }

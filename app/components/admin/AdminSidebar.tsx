@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -20,24 +21,26 @@ import {
 import { SignOutButton } from '@clerk/nextjs'
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", active: false },
-  { icon: Car, label: 'VIN Lookup', active: false },
+  { icon: LayoutDashboard, label: 'Admin Dashboard', href: '/admin' },
+  { icon: Car, label: 'VIN Lookup', href: '/dashboard' },
 ]
 
 interface SidebarProps {
+  collapsed: boolean
+  onCollapsedChange: (val: boolean) => void
   onLogout?: () => void
-  isOpen: boolean
-  onOpenChange: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function AdminSidebar({ onLogout }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false)
+export function AdminSidebar({ collapsed, onCollapsedChange, onLogout }: SidebarProps) {
+  const pathname = usePathname()
 
   return (
     <TooltipProvider delayDuration={0}>
+      {/* ── Desktop sidebar (hidden on mobile) ── */}
       <aside
         className={cn(
-          'relative flex flex-col border-r border-border bg-AdminSidebar transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 h-screen z-50 flex-col border-r border-border bg-AdminSidebar transition-all duration-300 ease-in-out',
+          'hidden md:flex',
           collapsed ? 'w-16' : 'w-60'
         )}
       >
@@ -58,16 +61,19 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
           )}
         </div>
 
-        {/* nav */}
+        {/* Nav */}
         <nav className="flex-1 space-y-0.5 p-2 pt-4">
           {navItems.map((item) => {
             const Icon = item.icon
-            const btn = (
-              <button
+            const isActive = pathname === item.href
+
+            const link = (
+              <Link
                 key={item.label}
+                href={item.href}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  item.active
+                  isActive
                     ? 'bg-accent text-accent-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   collapsed && 'justify-center px-0'
@@ -75,16 +81,16 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
-              </button>
+              </Link>
             )
 
             return collapsed ? (
               <Tooltip key={item.label}>
-                <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                <TooltipTrigger asChild>{link}</TooltipTrigger>
                 <TooltipContent side="right">{item.label}</TooltipContent>
               </Tooltip>
             ) : (
-              btn
+              link
             )
           })}
         </nav>
@@ -107,9 +113,7 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
             </Tooltip>
           ) : (
             <SignOutButton>
-              <button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              >
+              <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive">
                 <LogOut className="h-[18px] w-[18px] shrink-0" />
                 <span>Logout</span>
               </button>
@@ -117,9 +121,9 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
           )}
         </div>
 
-        {/* collapse toggle */}
+        {/* Collapse toggle */}
         <button
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => onCollapsedChange(!collapsed)}
           className="absolute -right-3 top-6 z-999 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-sidebar shadow-sm hover:bg-muted transition-colors"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -130,6 +134,38 @@ export function AdminSidebar({ onLogout }: SidebarProps) {
           )}
         </button>
       </aside>
+
+      {/* ── Mobile bottom nav (visible on mobile only) ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden border-t border-border bg-AdminSidebar">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={cn(
+                'flex flex-1 flex-col items-center justify-center gap-1 py-3 text-xs font-medium transition-colors',
+                isActive
+                  ? 'text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
+        <SignOutButton>
+          <button
+            onClick={onLogout}
+            className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Logout</span>
+          </button>
+        </SignOutButton>
+      </nav>
     </TooltipProvider>
   )
 }

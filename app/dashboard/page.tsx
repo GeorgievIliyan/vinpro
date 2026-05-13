@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { cn } from '@/lib/utils'
 
 import { Sidebar } from '../components/dashboard/SideBar'
 import { VinLookup } from '../components/dashboard/VinLookup'
@@ -10,7 +11,6 @@ import { VehicleCard } from '../components/dashboard/VehicleCard'
 import { ChecksHistory } from '../components/dashboard/ChecksHistory'
 import { incrementLookup, incrementSavedReports } from '@/lib/stats'
 
-// vehicle data type
 interface VehicleData {
   [key: string]: any;
   vin: string
@@ -31,74 +31,38 @@ interface VehicleData {
 }
 
 export default function DashboardPage() {
-  // clerk user
-  const { user } = useUser()
-
-  // current user id
+  const { user, isLoaded } = useUser()
   const userId = user?.id
 
-  // vin input
   const [vin, setVin] = useState('')
-
-  // vehicle result
   const [vehicleData, setVehicleData] = useState<VehicleData | null>(null)
-
-  // vin lookup loading
   const [loading, setLoading] = useState(false)
-
-  // previous checks
   const [checks, setChecks] = useState<VehicleData[]>([])
-
-  // previous checks loading
   const [loadingChecks, setLoadingChecks] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
-  // load checks when available
   useEffect(() => {
-    if (!userId) return
-
+    if (!userId || !isLoaded) return
     fetchChecks()
-  }, [userId])
+  }, [isLoaded, userId])
 
-  // fetch vehicle info
   const checkInfo = async () => {
     if (!vin.trim() || !userId) return
-
     setLoading(true)
-
-    // clear result
     setVehicleData(null)
-
     try {
       const response = await fetch('/api/fetch-info', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          vin,
-          userId,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vin, userId }),
       })
-
       const data = await response.json()
-
-      // error if failed
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to fetch vehicle info')
-      }
-
-      // save data
+      if (!response.ok) throw new Error(data?.error || 'Failed to fetch vehicle info')
       setVehicleData(data)
-
-      // Determine if the vehicle was flagged as stolen
       const isStolen =
         typeof data?.stolenCheck === 'string' &&
         data.stolenCheck.toLowerCase().includes('stolen')
-
-      // Increment stats in localStorage
       incrementLookup(isStolen)
-
-      // refresh history
       fetchChecks()
     } catch (error) {
       console.error('[dashboard] VIN lookup failed:', error)
@@ -107,71 +71,37 @@ export default function DashboardPage() {
     }
   }
 
-  // download pdf
   const downloadPDF = async () => {
     if (!vehicleData) return
-
     try {
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(vehicleData),
       })
-
-      // error if failed
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF')
-      }
-
-      // convert to blob
+      if (!response.ok) throw new Error('Failed to generate PDF')
       const blob = await response.blob()
-
-      // temp url
       const url = window.URL.createObjectURL(blob)
-
-      // temp anchor
       const a = document.createElement('a')
-
       a.href = url
       a.download = `car-${vehicleData.vin}.pdf`
-
       document.body.appendChild(a)
-
-      // trigger
       a.click()
-
-      // cleanup
       a.remove()
       window.URL.revokeObjectURL(url)
-
-      // Increment saved reports stat
       incrementSavedReports()
     } catch (error) {
       console.error('[dashboard] PDF download failed:', error)
     }
   }
 
-  // fetch previous checks
   const fetchChecks = async () => {
     if (!userId) return
-
     setLoadingChecks(true)
-
     try {
-      const response = await fetch(
-        `/api/fetch-checks?userId=${userId}`
-      )
-
+      const response = await fetch(`/api/fetch-checks?userId=${userId}`)
       const data = await response.json()
-
-      // error if failed
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to fetch checks')
-      }
-
-      // save checks
+      if (!response.ok) throw new Error(data?.error || 'Failed to fetch checks')
       setChecks(data)
     } catch (error) {
       console.error('[dashboard] Failed to fetch checks:', error)
@@ -182,26 +112,22 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* sidebar */}
-      <Sidebar />
+      <Sidebar collapsed={collapsed} onCollapsedChange={setCollapsed} />
 
-      {/* main content */}
-      <main className="flex-1 overflow-y-auto">
-        {/* header */}
+      {/* Main content — offset by sidebar on desktop, bottom-padded on mobile */}
+      <main
+        className={cn(
+          'flex-1 overflow-y-auto transition-all duration-300',
+          'md:pl-60',
+          collapsed && 'md:pl-16'
+        )}
+      >
         <header className="sticky top-0 z-10 flex h-14 items-center border-b border-border bg-background/80 px-6 backdrop-blur-sm">
-          <div>
-            <h1 className="text-sm font-semibold text-foreground">
-              Dashboard
-            </h1>
-          </div>
+          <h1 className="text-sm font-semibold text-foreground">Dashboard</h1>
         </header>
 
-        {/* dashboard content */}
-        <div className="mx-auto max-w-5xl space-y-6 p-6">
-          {/* statistics cards */}
+        <div className="mx-auto max-w-5xl space-y-6 p-6 pb-20 md:pb-6">
           <StatCards />
-
-          {/* VIN lookup section */}
           <VinLookup
             vin={vin}
             onVinChange={setVin}
@@ -209,16 +135,9 @@ export default function DashboardPage() {
             loading={loading}
             disabled={loading}
           />
-
-          {/* vehicle result card */}
           {vehicleData && (
-            <VehicleCard
-              data={vehicleData}
-              onDownloadPDF={downloadPDF}
-            />
+            <VehicleCard data={vehicleData} onDownloadPDF={downloadPDF} />
           )}
-
-          {/* previous checks history */}
           <ChecksHistory
             checks={checks}
             loading={loadingChecks}

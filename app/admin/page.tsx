@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { PlusCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type Account = {
   _id: string
@@ -24,6 +25,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
@@ -122,19 +124,24 @@ export default function AdminPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <AdminSidebar isOpen={sidebarOpen} onOpenChange={setSidebarOpen} />
+      <AdminSidebar collapsed={collapsed} onCollapsedChange={setCollapsed} />
 
-      {/* основен блок */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      {/* Main content — offset by sidebar on desktop, bottom-padded on mobile */}
+      <div
+        className={cn(
+          'flex flex-col flex-1 min-w-0 overflow-hidden transition-all duration-300',
+          'md:pl-60',
+          collapsed && 'md:pl-16'
+        )}
+      >
         <AdminHeader
           onRefresh={fetchAccounts}
           totalAccounts={accounts.length}
           onMenuToggle={() => setSidebarOpen(true)}
         />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">
           <div className="max-w-5xl mx-auto flex flex-col gap-6">
-            {/* заглавие */}
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Account Management</h2>
@@ -152,7 +159,6 @@ export default function AdminPage() {
               </Button>
             </div>
 
-            {/* статистики */}
             <StatsCards
               totalAccounts={accounts.length}
               totalChecks={totalChecks}
@@ -161,7 +167,6 @@ export default function AdminPage() {
 
             <Separator />
 
-            {/* секция таблица */}
             <div className="flex flex-col gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">All accounts</h3>
