@@ -10,6 +10,7 @@ import { StatCards } from '../components/dashboard/StatCards'
 import { VehicleCard } from '../components/dashboard/VehicleCard'
 import { ChecksHistory } from '../components/dashboard/ChecksHistory'
 import { incrementLookup, incrementSavedReports } from '@/lib/stats'
+import { headers } from 'next/headers'
 
 interface VehicleData {
   [key: string]: any;
@@ -53,7 +54,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/fetch-info', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-api-token': process.env.SECURE_API_KEY ?? '' },
         body: JSON.stringify({ vin, userId }),
       })
       const data = await response.json()
@@ -76,7 +77,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/generate-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-api-token': process.env.SECURE_API_KEY ?? '' },
         body: JSON.stringify(vehicleData),
       })
       if (!response.ok) throw new Error('Failed to generate PDF')
@@ -99,7 +100,11 @@ export default function DashboardPage() {
     if (!userId) return
     setLoadingChecks(true)
     try {
-      const response = await fetch(`/api/fetch-checks?userId=${userId}`)
+      const response = await fetch(`/api/fetch-checks?userId=${userId}`, {
+        headers: {
+          'x-api-token': process.env.SECURE_API_KEY ?? '',
+        },
+      })
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || 'Failed to fetch checks')
       setChecks(data)

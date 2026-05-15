@@ -8,7 +8,7 @@ export function validateApiToken(req: Request | NextRequest) {
 
   const token = req.headers.get("x-api-token")
 
-  if (!token || token.trim() === "") {
+  if (!token || token.trim() === "" || token == null) {
     return NextResponse.json(
       { error: "Missing or invalid x-api-token header" },
       { status: 401 }

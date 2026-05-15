@@ -2,7 +2,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { nanoid } from "nanoid";
 import { getDb } from "@/lib/mongodb";
 import { validateApiToken } from "@/lib/apiAuth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   const authError = validateApiToken(req)

@@ -30,7 +30,7 @@ export default function AdminPage() {
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/accounts")
+      const res = await fetch("/api/admin/accounts", { headers: { 'x-api-token': process.env.SECURE_API_KEY ?? '' } })
       const data = await res.json()
       if (res.ok) {
         setAccounts(data)
@@ -50,7 +50,7 @@ export default function AdminPage() {
 
   const handleCreate = async () => {
     try {
-      const response = await fetch("/api/create-account", { method: "POST" })
+      const response = await fetch("/api/create-account", { method: "POST", headers: { 'x-api-token': process.env.SECURE_API_KEY ?? '' } })
       const data = await response.json()
       if (response.ok) {
         toast.success("Account created")
@@ -68,7 +68,7 @@ export default function AdminPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/accounts/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/admin/accounts/${id}`, { method: "DELETE", headers: { 'x-api-token': process.env.SECURE_API_KEY ?? '' } })
       if (res.ok) {
         setAccounts((prev) => prev.filter((a) => a._id !== id))
         toast.success("Account deleted")
@@ -84,7 +84,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/add-checks", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'x-api-token': process.env.SECURE_API_KEY ?? '' },
         body: JSON.stringify({ clerkId, amount }),
       })
       if (res.ok) {
@@ -102,7 +102,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/reset-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'x-api-token': process.env.SECURE_API_KEY ?? '' },
         body: JSON.stringify({ clerkId }),
       })
       const data = await res.json()
